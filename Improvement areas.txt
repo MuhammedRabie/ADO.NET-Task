@@ -1,0 +1,105 @@
+**Improvements Summary for Windows Forms Course Management Project**
+
+---
+
+### 1. Business Logic Layer (BL) Improvements
+
+#### Security
+
+* **Hash Passwords:** Replace plaintext password check in `ValidateLogin` with hashed password comparison (e.g., SHA256 + salt).
+
+#### Input Validation
+
+* Add input validation before calling DAL methods (e.g., ensure course name is not empty, duration > 0).
+
+#### Naming & Code Quality
+
+* Use clear method names, e.g., rename `DisplayCourses` to `GetAllCourses`.
+
+#### Error Handling
+
+* Wrap DAL calls in `try-catch` blocks to handle unexpected exceptions.
+
+---
+
+### 2. Data Access Layer (DAL) Improvements
+
+#### Security & Best Practices
+
+* **Do not use static SqlConnection**: Use `using` blocks to instantiate connections per query.
+
+  ```csharp
+  using (SqlConnection con = new SqlConnection(connectionString))
+  {
+      cmd.Connection = con;
+      con.Open();
+      ...
+  }
+  ```
+* Move connection string from code to `App.config`.
+* Avoid `AddWithValue` where possible; specify types:
+
+  ```csharp
+  cmd.Parameters.Add("@Duration", SqlDbType.Int).Value = duration;
+  ```
+
+#### Foreign Keys & Schema Integrity
+
+* Add missing foreign key constraints:
+
+  ```sql
+  ALTER TABLE UserProfiles ADD CONSTRAINT FK_UserProfiles_Users FOREIGN KEY (UserID) REFERENCES Users(UserID);
+  ... (and others as detailed)
+  ```
+
+#### Code Design
+
+* Rename `DMLCommand` to `ExecuteNonQueryCommand` for clarity.
+* Consider combining `SelectCommand` and `DMLCommand` logic into reusable base methods if sticking with static classes.
+
+---
+
+### 3. Presentation Layer (PL) Improvements
+
+#### Input Validation
+
+* Use `TryParse` for integers instead of `int.Parse`:
+
+  ```csharp
+  if (!int.TryParse(tbDuration.Text, out int duration))
+  {
+      MessageBox.Show("Invalid duration.");
+      return;
+  }
+  ```
+* Validate fields before submission:
+
+  ```csharp
+  if (string.IsNullOrWhiteSpace(courseName)) { ... }
+  ```
+
+#### Naming & Clean Code
+
+* Rename button handlers (`button1_Click`) to descriptive names like `btnAddCourse_Click`.
+* Use methods like `ClearFormFields()` to avoid code repetition.
+* Ensure consistent naming conventions: camelCase for private fields, PascalCase for public ones.
+
+#### Error Handling
+
+* Add `try-catch` around critical operations like DB calls or file I/O.
+
+#### UI/UX Enhancements
+
+* Profile image loading and `OpenFileDialog` usage is good; consider validating file size or type.
+* Use asynchronous DB calls (`Task.Run` + `Invoke`) in forms where applicable.
+
+#### Optional Enhancements
+
+* Add course filtering or search.
+* Track login logs via `LoginLogs` table.
+* Add user role management (Admin vs. User).
+* Implement export features for course listings (CSV/PDF).
+
+---
+
+### 4. GitHub Readiness Checklist
